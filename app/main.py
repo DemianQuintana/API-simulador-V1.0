@@ -9,6 +9,17 @@ app = FastAPI(
 )
 
 
+@app.get("/")
+def root():
+    return {
+        "status": "ok",
+        "message": "API Simulador Fotovoltaico",
+        "health": "/health",
+        "docs": "/docs",
+        "simulaciones": "/simulaciones",
+    }
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

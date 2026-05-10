@@ -1,5 +1,7 @@
 from pathlib import Path
+from functools import lru_cache
 
+import duckdb
 import numpy as np
 import pandas as pd
 
@@ -45,7 +47,29 @@ if not DATASET_PATH.exists():
         f"No se encontro el dataset requerido: {DATASET_PATH}"
     )
 
-dataset = pd.read_parquet(DATASET_PATH)
+
+def _dataset_sql():
+    ruta_dataset = str(DATASET_PATH).replace("'", "''")
+    return f"read_parquet('{ruta_dataset}')"
+
+
+def _conectar_duckdb():
+    conexion = duckdb.connect(database=":memory:")
+    conexion.execute("PRAGMA threads=1")
+    return conexion
+
+
+@lru_cache(maxsize=1)
+def obtener_coordenadas_dataset():
+    columnas = ", ".join(["lat", "lon"])
+    consulta = f"""
+        SELECT DISTINCT {columnas}
+        FROM {_dataset_sql()}
+        ORDER BY lat, lon
+    """
+
+    with _conectar_duckdb() as conexion:
+        return conexion.execute(consulta).fetchdf()
 
 
 def calcular_generacion(inputs):
@@ -74,8 +98,8 @@ def calcular_generacion(inputs):
 
     parametros_montaje = PARAMETROS_MONTAJE.get(tipo_montaje, PARAMETROS_MONTAJE["En campo"])
 
-    lat_cercana, lon_cercana = obtener_coordenadas(lat, lon, dataset)
-    df_punto = obtener_datos_punto(lat_cercana, lon_cercana, dataset)
+    lat_cercana, lon_cercana = obtener_coordenadas(lat, lon)
+    df_punto = obtener_datos_punto(lat_cercana, lon_cercana)
 
     df_punto = calcular_aoi(df_punto, betha, azimuth)
     df_punto = calcular_factores_perez(df_punto)
@@ -117,9 +141,9 @@ def calcular_generacion(inputs):
     }
 
 
-def obtener_coordenadas(latitud_real, longitud_real, lista):
+def obtener_coordenadas(latitud_real, longitud_real):
 
-    coordenadas = lista[["lat", "lon"]].drop_duplicates()
+    coordenadas = obtener_coordenadas_dataset()
 
     distancias = np.sqrt(
         (coordenadas["lat"] - latitud_real)**2 +
@@ -128,20 +152,28 @@ def obtener_coordenadas(latitud_real, longitud_real, lista):
 
     indice_min = distancias.idxmin()
 
-    lat_cercana = coordenadas.loc[indice_min, "lat"]
-    lon_cercana = coordenadas.loc[indice_min, "lon"]
+    lat_cercana = float(coordenadas.loc[indice_min, "lat"])
+    lon_cercana = float(coordenadas.loc[indice_min, "lon"])
 
     return lat_cercana, lon_cercana
 
 
-def obtener_datos_punto(latitud, longitud, lista):
+def obtener_datos_punto(latitud, longitud):
 
-    df_punto = lista.loc[
-        (lista["lat"] == latitud) & (lista["lon"] == longitud),
-        COLUMNAS_BASE
-    ].copy()
+    columnas = ", ".join(COLUMNAS_BASE)
+    consulta = f"""
+        SELECT {columnas}
+        FROM {_dataset_sql()}
+        WHERE lat = ? AND lon = ?
+        ORDER BY time
+    """
 
-    df_punto = df_punto.sort_values("time").reset_index(drop=True)
+    with _conectar_duckdb() as conexion:
+        df_punto = conexion.execute(consulta, [latitud, longitud]).fetchdf()
+
+    if df_punto.empty:
+        raise ValueError("No se encontraron datos climaticos para el punto seleccionado")
+
     df_punto["time"] = pd.to_datetime(df_punto["time"])
     df_punto["mes"] = df_punto["time"].dt.month
 
