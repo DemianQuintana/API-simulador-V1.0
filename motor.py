@@ -9,6 +9,22 @@ BASE_DIR = Path(__file__).resolve().parent
 DATASET_PATH = BASE_DIR / "5_dataset_solar_santa_fe_LOCAL.parquet"
 HORAS_ANIO = 8760
 MESES = range(1, 13)
+HORAS_DIA = range(24)
+ESTACIONES = ("verano", "otonio", "invierno", "primavera")
+ESTACION_POR_MES = {
+    1: "verano",
+    2: "verano",
+    3: "otonio",
+    4: "otonio",
+    5: "otonio",
+    6: "invierno",
+    7: "invierno",
+    8: "invierno",
+    9: "primavera",
+    10: "primavera",
+    11: "primavera",
+    12: "verano",
+}
 
 PARAMETROS_MONTAJE = {
     "En techo": {
@@ -123,6 +139,9 @@ def calcular_generacion(inputs):
     energia_mensual = df_punto.groupby("mes")["energia_horaria"].sum()
     energia_anual = df_punto["energia_horaria"].sum()
     factor_capacidad = (energia_anual / (pot_ac * HORAS_ANIO)) * 100
+    generacion_promedio_horaria_estacional = calcular_generacion_promedio_horaria_estacional(
+        df_punto
+    )
 
     generacion_mensual = [
         {
@@ -137,8 +156,29 @@ def calcular_generacion(inputs):
         "longitud_dataset": lon_cercana,
         "energia_anual": float(energia_anual),
         "energia_mensual": generacion_mensual,
+        "generacion_promedio_horaria_estacional": generacion_promedio_horaria_estacional,
         "factor_capacidad": float(factor_capacidad),
     }
+
+
+def calcular_generacion_promedio_horaria_estacional(df_punto):
+    promedio_horario = df_punto.groupby(["estacion", "hora"])["energia_horaria"].mean()
+
+    return [
+        {
+            "estacion": estacion,
+            "valores": [
+                {
+                    "hora": hora,
+                    "energia_promedio": float(
+                        promedio_horario.get((estacion, hora), 0.0)
+                    ),
+                }
+                for hora in HORAS_DIA
+            ],
+        }
+        for estacion in ESTACIONES
+    ]
 
 
 def obtener_coordenadas(latitud_real, longitud_real):
@@ -176,6 +216,8 @@ def obtener_datos_punto(latitud, longitud):
 
     df_punto["time"] = pd.to_datetime(df_punto["time"])
     df_punto["mes"] = df_punto["time"].dt.month
+    df_punto["hora"] = df_punto["time"].dt.hour
+    df_punto["estacion"] = df_punto["mes"].map(ESTACION_POR_MES)
 
     return df_punto
 

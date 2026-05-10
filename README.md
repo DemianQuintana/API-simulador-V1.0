@@ -88,6 +88,21 @@ Ejemplo de salida:
       "energia": 660.73
     }
   ],
+  "generacion_promedio_horaria_estacional": [
+    {
+      "estacion": "verano",
+      "valores": [
+        {
+          "hora": 0,
+          "energia_promedio": 0.0
+        },
+        {
+          "hora": 12,
+          "energia_promedio": 3.12
+        }
+      ]
+    }
+  ],
   "factor_capacidad": 19.99
 }
 ```

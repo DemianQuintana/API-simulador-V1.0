@@ -69,6 +69,27 @@ class EnergiaMensual(BaseModel):
     )
 
 
+class EnergiaPromedioHoraria(BaseModel):
+    hora: int = Field(
+        description="Hora del dia, entre 0 y 23.",
+        examples=[12],
+    )
+    energia_promedio: float = Field(
+        description="Energia promedio generada para esa hora en kWh.",
+        examples=[2.45],
+    )
+
+
+class GeneracionPromedioHorariaEstacional(BaseModel):
+    estacion: Literal["verano", "otonio", "invierno", "primavera"] = Field(
+        description="Estacion del anio segun el hemisferio sur.",
+        examples=["verano"],
+    )
+    valores: list[EnergiaPromedioHoraria] = Field(
+        description="Generacion promedio por hora del dia para la estacion.",
+    )
+
+
 class SimulacionResponse(BaseModel):
     latitud_dataset: float = Field(
         description="Latitud del punto climatico mas cercano usado por el motor.",
@@ -84,6 +105,9 @@ class SimulacionResponse(BaseModel):
     )
     energia_mensual: list[EnergiaMensual] = Field(
         description="Energia generada por mes en kWh.",
+    )
+    generacion_promedio_horaria_estacional: list[GeneracionPromedioHorariaEstacional] = Field(
+        description="Generacion promedio por hora del dia agrupada por estacion.",
     )
     factor_capacidad: float = Field(
         description="Factor de capacidad anual en porcentaje.",
