@@ -42,6 +42,16 @@ La documentacion interactiva queda disponible en:
 http://localhost:8000/docs
 ```
 
+## CORS
+
+La API permite por defecto llamadas desde cualquier origen (`*`) para facilitar pruebas temporales.
+
+En produccion, conviene configurar la variable de entorno `CORS_ORIGINS` con el dominio real de la web. Si hay mas de un origen, separarlos con comas:
+
+```text
+CORS_ORIGINS=https://tu-web.com,https://www.tu-web.com
+```
+
 ## Ejecutar en produccion
 
 En un entorno de nube no se usa `--reload`.

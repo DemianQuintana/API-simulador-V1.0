@@ -1,11 +1,35 @@
+import os
+
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas import SimulacionRequest, SimulacionResponse
 from app.services import ejecutar_simulacion
 
+
+def obtener_origenes_cors():
+    origenes = os.getenv("CORS_ORIGINS")
+    if not origenes:
+        return ["*"]
+
+    return [
+        origen.strip()
+        for origen in origenes.split(",")
+        if origen.strip()
+    ]
+
+
 app = FastAPI(
     title="API Simulador Fotovoltaico",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=obtener_origenes_cors(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 
