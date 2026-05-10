@@ -75,7 +75,7 @@ Ejemplo de entrada:
   "lat": -31.6475,
   "lon": -60.6985,
   "betha": 30,
-  "azimuth": 0,
+  "azimuth": -30,
   "pot_dc": 5,
   "pot_ac": 4,
   "tipo_panel": "Estandar",
@@ -84,6 +84,8 @@ Ejemplo de entrada:
   "eficiencia_inversor": 96
 }
 ```
+
+El campo `azimuth` acepta valores entre `-360` y `360` grados. La API normaliza internamente los valores negativos al rango `0-360`; por ejemplo, `-30` se interpreta como `330`.
 
 Ejemplo de salida:
 

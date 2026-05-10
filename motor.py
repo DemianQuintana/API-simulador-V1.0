@@ -93,7 +93,7 @@ def calcular_generacion(inputs):
     lat = inputs["lat"]
     lon = inputs["lon"]
     betha = inputs["betha"]
-    azimuth = inputs["azimuth"]
+    azimuth = inputs["azimuth"] % 360
     pot_dc = inputs["pot_dc"]
     pot_ac = inputs["pot_ac"]
     tipo_panel = inputs["tipo_panel"]

@@ -19,10 +19,10 @@ class SimulacionRequest(BaseModel):
         examples=[30],
     )
     azimuth: float = Field(
-        ge=0,
+        ge=-360,
         le=360,
-        description="Azimuth de los paneles en grados.",
-        examples=[0],
+        description="Azimuth de los paneles en grados. Se aceptan valores negativos y se normalizan a 0-360.",
+        examples=[-30],
     )
     pot_dc: float = Field(
         gt=0,
